@@ -1,0 +1,40 @@
+# VSCode Web 开发环境 Dockerfile
+# 用于快速启动 VSCode Web 开发服务器
+
+FROM node:18-bullseye
+
+# 安装必要的系统依赖
+RUN apt-get update && apt-get install -y \
+    git \
+    python3 \
+    make \
+    g++ \
+    pkg-config \
+    libx11-dev \
+    libxkbfile-dev \
+    libsecret-1-dev \
+    libkrb5-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# 设置工作目录
+WORKDIR /workspace/vscode
+
+# 复制 package.json 和 lock 文件
+COPY package.json package-lock.json* ./
+COPY remote/package.json ./remote/
+COPY remote/web/package.json ./remote/web/
+
+# 安装依赖
+RUN npm ci
+
+# 复制源代码
+COPY . .
+
+# 编译 VSCode Web
+RUN npm run compile-web
+
+# 暴露端口
+EXPOSE 8080
+
+# 启动命令
+CMD ["node", "./scripts/code-web.js", "--host", "0.0.0.0", "--port", "8080"]
